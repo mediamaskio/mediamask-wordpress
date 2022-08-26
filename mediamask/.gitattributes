@@ -1,0 +1,12 @@
+# Directories
+/.wordpress-org export-ignore
+/.github export-ignore
+/tests export-ignore
+/docker export-ignore
+/frontend/node_modules export-ignore
+
+# Files
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/.php_cs export-ignore
+/readme.md export-ignore
