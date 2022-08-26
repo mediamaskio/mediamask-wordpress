@@ -5,22 +5,36 @@ import DynamicTextLayerSelector from '../components/DynamicTextLayerSelector.vue
 import {addNotification} from "../utilities/notifications";
 import DynamicImageLayerSelector from "./DynamicImageLayerSelector.vue";
 
+interface DynamicLayer {
+  id: string
+  index: number
+  name: string
+  type: string
+}
+
 type Template = {
   id: string
   name: string
+  dynamic_layers?: DynamicLayer[]
 }
 
 const templates = ref<Template[] | null>(null);
 
 const selectedTemplateId = ref();
 
+// interface DynamicLayerConfiguration {
+//   id: string,
+//   value: string
+// }
+
 interface DynamicLayerConfiguration {
-  id: string,
-  value: string
+  values: {
+    [key: string]: string
+  }
 }
 
-const baseConfiguration = ref({})
-const newDynamicLayerConfiguration = reactive({values: {}})
+const baseConfiguration = ref<DynamicLayerConfiguration>({values: {}})
+const newDynamicLayerConfiguration = reactive<DynamicLayerConfiguration>({values: {}})
 
 const selectedTemplate = computed(() => {
   return templates.value ? templates.value.find((template) => template.id === selectedTemplateId.value) : null
@@ -43,7 +57,7 @@ function getBaseConfig() {
   api.get('mediamask/v1/base-configuration')
       .then(function (response) {
 
-          baseConfiguration.value = response.data.base_configuration
+        baseConfiguration.value.values = response.data.base_configuration.values
         selectedTemplateId.value = response.data.base_configuration.template
       })
       .catch(function (error) {
@@ -53,19 +67,20 @@ function getBaseConfig() {
 
 watch(dynamicLayers, () => {
   newDynamicLayerConfiguration.values = {};
-  for (let dynamicLayersKey in dynamicLayers.value) {
-    if(baseConfiguration.value.values[dynamicLayers.value[dynamicLayersKey].name]){
-      newDynamicLayerConfiguration.values[dynamicLayers.value[dynamicLayersKey].name] = baseConfiguration.value.values[dynamicLayers.value[dynamicLayersKey].name]
-    }
+  if(dynamicLayers.value){
+    dynamicLayers.value.forEach((dynamicLayer) => {
+      if (baseConfiguration.value.values[dynamicLayer.name]) {
+        newDynamicLayerConfiguration.values[dynamicLayer.name] = baseConfiguration.value.values[dynamicLayer.name]
+      }
+    })
   }
-
 })
 
-function saveBaseConfig(){
-    api.post('mediamask/v1/base-configuration', {
-      'template': selectedTemplateId.value,
-      'values': newDynamicLayerConfiguration.values
-    })
+function saveBaseConfig() {
+  api.post('mediamask/v1/base-configuration', {
+    'template': selectedTemplateId.value,
+    'values': newDynamicLayerConfiguration.values
+  })
       .then(function (response) {
         addNotification();
 
@@ -80,7 +95,7 @@ function getTemplates() {
   api.get('mediamask/v1/templates')
       .then(function (response) {
         templates.value = response.data.data
-        if(selectedTemplateId.value === null){
+        if (selectedTemplateId.value === null) {
           selectedTemplateId.value = templates.value ? templates.value[0].id : null
         }
 
@@ -128,7 +143,8 @@ function getTemplates() {
                 <h3 class="block text-sm font-medium text-gray-700">Dynamic Layers</h3>
                 <p class="text-gray-700 pb-4 pt-1">
                   Each dynamic layer can display one text or image from your Wordpress Post/Page etc. <br>
-                  You can edit the names of dynamic layers in <a class="text-blue-500" target="_blank" :href="templateLink">here</a>.
+                  You can edit the names of dynamic layers in <a class="text-blue-500" target="_blank"
+                                                                 :href="templateLink">here</a>.
                 </p>
 
                 <div v-for="dynamicLayer in dynamicLayers"
@@ -144,7 +160,7 @@ function getTemplates() {
                   <DynamicTextLayerSelector v-model="newDynamicLayerConfiguration.values[dynamicLayer.name]"
                                             v-if="dynamicLayer.type === 'text'"></DynamicTextLayerSelector>
                   <DynamicImageLayerSelector v-model="newDynamicLayerConfiguration.values[dynamicLayer.name]"
-                                            v-if="dynamicLayer.type === 'image'"></DynamicImageLayerSelector>
+                                             v-if="dynamicLayer.type === 'image'"></DynamicImageLayerSelector>
 
                 </div>
               </div>

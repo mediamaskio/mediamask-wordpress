@@ -27,6 +27,7 @@ jobs:
           SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
           SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
           SLUG: mediamask
+          BUILD_DIR: mediamask
       - name: Upload release asset
         uses: actions/upload-release-asset@v1
         env:

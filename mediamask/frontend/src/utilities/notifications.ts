@@ -1,6 +1,10 @@
 import {ref} from "vue";
 
-export const notifications = ref([]);
+interface Notification {
+    message: string
+}
+
+export const notifications = ref<Array<Notification>>([]);
 
 export function addNotification(){
     notifications.value.push({message: 'test'});
