@@ -4,6 +4,7 @@
 /tests export-ignore
 /docker export-ignore
 /frontend/node_modules export-ignore
+/.git export-ignore
 
 # Files
 /.gitattributes export-ignore
