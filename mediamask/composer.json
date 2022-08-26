@@ -1,0 +1,5 @@
+{
+    "require": {
+        "mediamaskio/mediamask-php": "^1.0.5"
+    }
+}
