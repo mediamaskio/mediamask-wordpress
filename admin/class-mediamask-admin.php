@@ -76,14 +76,14 @@ class Mediamask_Admin
         update_option('mediamask_api_key', $request->get_json_params()['api_token']);
 
         return [
-            'api_token' => get_option('mediamask_api_key')
+            'api_token' => get_option('mediamask_api_key', null)
         ];
     }
 
     public function get_api_key()
     {
         return [
-            'api_token' => get_option('mediamask_api_key')
+            'api_token' => get_option('mediamask_api_key', null)
         ];
     }
 
@@ -103,22 +103,48 @@ class Mediamask_Admin
         update_option('mediamask_base_configuration', $request->get_json_params());
 
         return [
-            'base_configuration' => get_option('mediamask_base_configuration')
+            'base_configuration' => get_option('mediamask_base_configuration', null)
         ];
     }
 
     public function get_base_configuration(){
         return [
-            'base_configuration' => get_option('mediamask_base_configuration')
+            'base_configuration' => get_option('mediamask_base_configuration', null)
+        ];
+    }
+    public function save_custom_configuration($request){
+        update_option('mediamask_custom_configuration', $request->get_json_params());
+
+        return [
+            'custom_configuration' => get_option('mediamask_custom_configuration', [])
         ];
     }
 
+    public function get_custom_configuration(){
+        return [
+            'custom_configuration' => get_option('mediamask_custom_configuration', [])
+        ];
+    }
+
+
+    public function reset_settings(){
+        delete_option('mediamask_custom_configuration');
+        delete_option('mediamask_base_configuration');
+        delete_option('mediamask_api_key');
+    }
 
     public function add_rest_api_init()
     {
         register_rest_route('mediamask/v1', '/api-key', array(
             'methods' => 'POST',
             'callback' => [$this, 'update_api_key'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            }
+        ));
+        register_rest_route('mediamask/v1', '/reset-settings', array(
+            'methods' => 'POST',
+            'callback' => [$this, 'reset_settings'],
             'permission_callback' => function () {
                 return current_user_can('manage_options');
             }
@@ -155,6 +181,24 @@ class Mediamask_Admin
                 return current_user_can('manage_options');
             }
         ));
+
+        register_rest_route('mediamask/v1', '/custom-configuration', array(
+            'methods' => 'POST',
+            'callback' => [$this, 'save_custom_configuration'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            }
+        ));
+
+        register_rest_route('mediamask/v1', '/custom-configuration', array(
+            'methods' => 'GET',
+            'callback' => [$this, 'get_custom_configuration'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            }
+        ));
+
+
     }
 
     public function enqueue_vite()
@@ -166,9 +210,25 @@ class Mediamask_Admin
 
             wp_enqueue_style($this->mediamask . '-vite-style', plugin_dir_url(__FILE__) . '../frontend/dist/' . $manifest['../src/main.ts']['css'][0], [], $this->version, false);
 
+            $builtInPostTypes = ["attachment","revision","nav_menu_item","custom_css","customize_changeset","oembed_cache","user_request","wp_block","wp_template","wp_template_part","wp_global_styles","wp_navigation"];
+            $postTypes = array_filter(array_keys(get_post_types()), function ($postType) use ($builtInPostTypes){
+                return !in_array($postType, $builtInPostTypes);
+            });
+            $taxonomies = array_keys(get_taxonomies(['public'   => true,], 'names', 'and'));
+
+            $postTypesAndTaxonomies = array_merge($postTypes, $taxonomies);
+
+            $postTypesAndTaxonomies = array_map(function ($tag){
+                return [
+                    'id' => $tag,
+                    'templates' => array_keys(array_merge(array_flip(get_page_templates(null, $tag)), array_flip(['default', 'archive'])))];
+            }, $postTypesAndTaxonomies);
+
+
             wp_localize_script($this->mediamask . '-vite-scripts', 'wpApiSettings', array(
                 'root' => esc_url_raw(rest_url()),
-                'nonce' => wp_create_nonce('wp_rest')
+                'nonce' => wp_create_nonce('wp_rest'),
+                'post_types_and_taxonomies' => $postTypesAndTaxonomies,
             ));
         }
     }

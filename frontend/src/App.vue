@@ -1,14 +1,18 @@
 <script setup lang="ts">
 // This starter template is using Vue 3 <script setup> SFCs
 // Check out https://vuejs.org/api/sfc-script-setup.html#script-setup
-import HelloWorld from './components/HelloWorld.vue'
 import ApiTokenSection from './components/ApiTokenSection.vue'
 import BaseTemplateConfiguration from "./components/BaseTemplateConfiguration.vue";
 import {notifications} from "./utilities/notifications";
 import Notification from "./components/Notification.vue";
+import CustomTemplateConfiguration from "./components/CustomTemplateConfiguration.vue";
+import ResetSettingsButton from "./components/ResetSettingsButton.vue";
+import {savedApiKey} from "./utilities/api-token";
+import CustomDialog from "./components/CustomDialog.vue";
 </script>
 
 <template>
+
   <div>
     <div v-for="notification in notifications">
       <Notification></Notification>
@@ -26,7 +30,10 @@ import Notification from "./components/Notification.vue";
   </div>
   <div class="max-w-7xl py-12 px-12">
     <ApiTokenSection></ApiTokenSection>
-    <BaseTemplateConfiguration></BaseTemplateConfiguration>
+    <BaseTemplateConfiguration v-if="savedApiKey"></BaseTemplateConfiguration>
+    <CustomTemplateConfiguration v-if="savedApiKey"></CustomTemplateConfiguration>
+    <ResetSettingsButton></ResetSettingsButton>
+
   </div>
 </template>
 

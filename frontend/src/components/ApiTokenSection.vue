@@ -2,43 +2,12 @@
 import {onMounted, ref} from 'vue'
 import {api} from "../utilities/api";
 import {addNotification} from "../utilities/notifications";
-
-const apiKey = ref('');
+import {getTemplates} from "../utilities/templates";
+import {apiKey, getApiKey, updateApiToken} from "../utilities/api-token";
 
 onMounted(() => {
   getApiKey();
 })
-
-function updateApiToken() {
-  api.post('mediamask/v1/api-key', {
-    api_token: apiKey.value,
-  })
-      .then(function (response) {
-        console.log(response);
-        addNotification();
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-  api.get('mediamask/v1/templates')
-      .then(function (response) {
-        console.log(response);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-
-}
-
-function getApiKey() {
-  api.get('mediamask/v1/api-key')
-      .then(function (response) {
-        apiKey.value = response.data.api_token;
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-}
 
 </script>
 

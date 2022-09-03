@@ -58,50 +58,59 @@ class Mediamask_Public
 
     public function add_og_image()
     {
+        $configParameters = null;
+        $ogImageUrl = null;
+        $templateId = null;
+        // Check if custom rule applies
 
-        $config = Mediamask\Configuration::getDefaultConfiguration()->setAccessToken(get_option('mediamask_api_key'));
+//        $this->getSpecificCustomConfigIfExists
+        $customConfigs = get_option('mediamask_custom_configuration', []);
+        $currentObject = get_queried_object();
 
-        $apiInstance = new Mediamask\Api\MediamaskApi(
-        // If you want use custom http client, pass your client which implements `GuzzleHttp\ClientInterface`.
-        // This is optional, `GuzzleHttp\Client` will be used as default.
-            new GuzzleHttp\Client(),
-            $config
-        );
+        $matchingSpecificConfigs = array_filter($customConfigs, function ($customConfig) use ($currentObject){
+            if ($currentObject instanceof WP_Post) {
+                return $customConfig['post_type'] === $currentObject->post_type && $customConfig['template'] === get_page_template_slug();
+            }
+            if ($currentObject instanceof WP_Post_Type) {
+                return $customConfig['post_type'] === $currentObject->name && $customConfig['template'] === get_page_template_slug();
+            }
+            if ($currentObject instanceof WP_Term) {
+                return $customConfig['post_type'] === $currentObject->taxonomy && $customConfig['template'] === get_page_template_slug();
+            }
+            //            if($currentObject instanceof WP_User){
+//                if($customConfig['post_type'] === $currentObject->name)
+//            }
+            return false;
+         });
 
-        $baseConfig = get_option('mediamask_base_configuration');
-        $templateId = $baseConfig['template'];
+        $matchingDefaultCustomConfigs = array_filter($customConfigs, function ($customConfig) use ($currentObject){
+            if ($currentObject instanceof WP_Post) {
+                return $customConfig['post_type'] === $currentObject->post_type && $customConfig['template'] === 'default';
+            }
+            if ($currentObject instanceof WP_Post_Type) {
+                return $customConfig['post_type'] === $currentObject->name && $customConfig['template'] === 'default';
+            }
+            if ($currentObject instanceof WP_Term) {
+                return $customConfig['post_type'] === $currentObject->taxonomy && $customConfig['template'] === 'default';
+            }
+//            if($currentObject instanceof WP_User){
+//                if($customConfig['post_type'] === $currentObject->name)
+//            }
+            return false;
+        });
+        // check if default config for post type exists
 
-        $configParameters = array_map(function ($configParameter){
-            if($configParameter === 'title'){
-                return get_the_title();
+        if(count($matchingSpecificConfigs) > 0){
+            $this->renderOgImages(reset($matchingSpecificConfigs)['mediamask_template_id'], reset($matchingSpecificConfigs)['dynamic_layers']);
+        }
+        else if(count($matchingDefaultCustomConfigs) > 0){
+            $this->renderOgImages(reset($matchingDefaultCustomConfigs)['mediamask_template_id'], reset($matchingDefaultCustomConfigs)['dynamic_layers']);
+        }
+        else{
+            if($baseConfig = get_option('mediamask_base_configuration')){
+                $this->renderOgImages($baseConfig['mediamask_template_id'], $baseConfig['dynamic_layers']);
             }
-            else if($configParameter === 'description'){
-                return get_the_excerpt();
-            }
-            else if($configParameter === 'publish_date'){
-                return get_the_date();
-            }
-            else if($configParameter === 'author_name'){
-                return get_the_author();
-            }
-            else if($configParameter === 'permalink'){
-                return get_the_permalink();
-            }
-            else if($configParameter === 'permalink'){
-                return get_the_permalink();
-            }
-            else if($configParameter === 'post_thumbnail'){
-                return get_the_post_thumbnail_url(null, 'full');
-            }
-            else if($configParameter === 'author_image'){
-                return get_avatar_url(get_the_author_meta('ID'));
-            }
-            return $configParameter;
-        }, $baseConfig['values']);
-
-        $ogImageUrl = $apiInstance->getSignedUrl($templateId, $configParameters);
-
-        echo '<meta property="og:image" content="' . esc_url($ogImageUrl) . '"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="' . esc_url($ogImageUrl) . '">';
+        }
     }
 
 
@@ -151,6 +160,41 @@ class Mediamask_Public
 
         wp_enqueue_script($this->mediamask, plugin_dir_url(__FILE__) . 'js/mediamask-public.js', array('jquery'), $this->version, false);
 
+    }
+
+    private function mapConfigParametersToPostValues($configValues)
+    {
+        return array_map(function ($configParameter) {
+            if ($configParameter === 'title') {
+                return get_the_title();
+            } else if ($configParameter === 'description') {
+                return get_the_excerpt();
+            } else if ($configParameter === 'publish_date') {
+                return get_the_date();
+            } else if ($configParameter === 'author_name') {
+                return get_the_author();
+            } else if ($configParameter === 'permalink') {
+                return get_the_permalink();
+            } else if ($configParameter === 'post_thumbnail') {
+                return get_the_post_thumbnail_url(null, 'full');
+            } else if ($configParameter === 'author_image') {
+                return get_avatar_url(get_the_author_meta('ID'));
+            }
+            return $configParameter;
+        }, $configValues);
+    }
+
+    private function renderOgImages($templateId, $configParameters)
+    {
+        $config = \Mediamask\Configuration::getDefaultConfiguration()->setAccessToken(get_option('mediamask_api_key'));
+
+        $apiInstance = new \Mediamask\Api\MediamaskApi(
+            new GuzzleHttp\Client(),
+            $config
+        );
+
+        $ogImageUrl = $apiInstance->getSignedUrl($templateId, $this->mapConfigParametersToPostValues($configParameters));
+        echo '<meta property="og:image" content="' . esc_url($ogImageUrl) . '"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="' . esc_url($ogImageUrl) . '">';
     }
 
 }

@@ -4,7 +4,13 @@ declare global {
     interface Window {
         wpApiSettings: {
             root: string,
-            nonce: string
+            nonce: string,
+            post_types_and_taxonomies: [{
+                id: string,
+                templates: [
+                    string
+                ]
+            }]
         };
     }
 }
