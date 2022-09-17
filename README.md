@@ -18,3 +18,22 @@ You can either choose one of the existing templates or create a new one from scr
    Make sure the Template has "REST API" and "Signed URL API" enabled when you create it (those are the default options, so don't worry).
 2. After creating the template, you can select it in the mediamask plugin. 
 Every Dynamic Layer (texts and images) can be configured to be filled with Wordpress Attributes like the_title(), the_excerpt(), the_author() etc.  
+
+## Attribute Mapping
+
+* Title 
+  * for posts/pages: The title of your post/page, get_the_title()
+  * for terms/categories: The name of the term/category
+  * for taxonomies: The taxonomy label
+  * for users: The users display name
+* Excerpt
+  * for posts/pages: The excerpt of the title/post, get_the_excerpt()
+  * for terms/categories: The description of the term/category
+  * for taxonomies: The description of the taxonomy
+  * for users: The biography of the user
+* Published Date 
+  * for all: get_the_date()
+* Author Name 
+  * for all: get_the_author()
+* Permalink 
+  * for all: get_the_permalink()

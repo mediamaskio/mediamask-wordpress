@@ -224,6 +224,8 @@ class Mediamask_Admin
                     'templates' => array_keys(array_merge(array_flip(get_page_templates(null, $tag)), array_flip(['default', 'archive'])))];
             }, $postTypesAndTaxonomies);
 
+            $postTypesAndTaxonomies[] = ['id' => 'user', 'templates' => ['default']];
+
 
             wp_localize_script($this->mediamask . '-vite-scripts', 'wpApiSettings', array(
                 'root' => esc_url_raw(rest_url()),

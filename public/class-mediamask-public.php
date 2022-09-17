@@ -56,6 +56,11 @@ class Mediamask_Public
 
     }
 
+    public function double_encoded_nl_to_encoded_nl($url)
+    {
+        return str_ireplace('%250A', '%0A', $url);
+    }
+
     public function add_og_image()
     {
         $configParameters = null;
@@ -67,23 +72,23 @@ class Mediamask_Public
         $customConfigs = get_option('mediamask_custom_configuration', []);
         $currentObject = get_queried_object();
 
-        $matchingSpecificConfigs = array_filter($customConfigs, function ($customConfig) use ($currentObject){
+        $matchingSpecificConfigs = array_filter($customConfigs, function ($customConfig) use ($currentObject) {
             if ($currentObject instanceof WP_Post) {
                 return $customConfig['post_type'] === $currentObject->post_type && $customConfig['template'] === get_page_template_slug();
             }
             if ($currentObject instanceof WP_Post_Type) {
-                return $customConfig['post_type'] === $currentObject->name && $customConfig['template'] === get_page_template_slug();
+                return $customConfig['post_type'] === $currentObject->name && $customConfig['template'] === 'archive';
             }
             if ($currentObject instanceof WP_Term) {
                 return $customConfig['post_type'] === $currentObject->taxonomy && $customConfig['template'] === get_page_template_slug();
             }
-            //            if($currentObject instanceof WP_User){
-//                if($customConfig['post_type'] === $currentObject->name)
-//            }
+            if ($currentObject instanceof WP_User) {
+                return $customConfig['post_type'] === 'user';
+            }
             return false;
-         });
+        });
 
-        $matchingDefaultCustomConfigs = array_filter($customConfigs, function ($customConfig) use ($currentObject){
+        $matchingDefaultCustomConfigs = array_filter($customConfigs, function ($customConfig) use ($currentObject) {
             if ($currentObject instanceof WP_Post) {
                 return $customConfig['post_type'] === $currentObject->post_type && $customConfig['template'] === 'default';
             }
@@ -93,21 +98,19 @@ class Mediamask_Public
             if ($currentObject instanceof WP_Term) {
                 return $customConfig['post_type'] === $currentObject->taxonomy && $customConfig['template'] === 'default';
             }
-//            if($currentObject instanceof WP_User){
-//                if($customConfig['post_type'] === $currentObject->name)
-//            }
+            if($currentObject instanceof WP_User){
+                return $customConfig['post_type'] === 'user';
+            }
             return false;
         });
         // check if default config for post type exists
 
-        if(count($matchingSpecificConfigs) > 0){
+        if (count($matchingSpecificConfigs) > 0) {
             $this->renderOgImages(reset($matchingSpecificConfigs)['mediamask_template_id'], reset($matchingSpecificConfigs)['dynamic_layers']);
-        }
-        else if(count($matchingDefaultCustomConfigs) > 0){
+        } else if (count($matchingDefaultCustomConfigs) > 0) {
             $this->renderOgImages(reset($matchingDefaultCustomConfigs)['mediamask_template_id'], reset($matchingDefaultCustomConfigs)['dynamic_layers']);
-        }
-        else{
-            if($baseConfig = get_option('mediamask_base_configuration')){
+        } else {
+            if ($baseConfig = get_option('mediamask_base_configuration')) {
                 $this->renderOgImages($baseConfig['mediamask_template_id'], $baseConfig['dynamic_layers']);
             }
         }
@@ -164,10 +167,34 @@ class Mediamask_Public
 
     private function mapConfigParametersToPostValues($configValues)
     {
-        return array_map(function ($configParameter) {
+        $currentObject = get_queried_object();
+        return array_map(function ($configParameter) use ($currentObject) {
             if ($configParameter === 'title') {
+                if (is_archive()) {
+                    if ($currentObject instanceof WP_Term) {
+                        return $currentObject->name;
+                    } else if ($currentObject instanceof WP_Post_Type) {
+                        return get_post_type_object(get_post_type())->label;
+                    }
+                    else if ($currentObject instanceof WP_USER) {
+                        return get_userdata($currentObject->ID)->display_name;
+                    }
+                }
                 return get_the_title();
             } else if ($configParameter === 'description') {
+                if (is_archive()) {
+                    if ($currentObject instanceof WP_Term) {
+                        return get_term($currentObject->term_id)->description;
+                    } else if ($currentObject instanceof WP_Post_Type) {
+                        return get_post_type_object(get_post_type())->description;
+                    }
+                    else if ($currentObject instanceof WP_USER) {
+                        $descriptions = get_user_meta( $currentObject->data->ID )['description'];
+                        if(count($descriptions) > 0){
+                            return $descriptions[0];
+                        }
+                    }
+                }
                 return get_the_excerpt();
             } else if ($configParameter === 'publish_date') {
                 return get_the_date();
@@ -194,7 +221,11 @@ class Mediamask_Public
         );
 
         $ogImageUrl = $apiInstance->getSignedUrl($templateId, $this->mapConfigParametersToPostValues($configParameters));
-        echo '<meta property="og:image" content="' . esc_url($ogImageUrl) . '"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="' . esc_url($ogImageUrl) . '">';
+
+        // wordpress requires output to be escaped. To allow new lines in the URL, the Character %0A will be replaces before the escaping
+        // it gets reverted back in the clean_url filter
+        $ogImageUrl = str_ireplace('%0A', '%250A', $ogImageUrl);
+        echo '<meta property="og:image" content="' . esc_url_raw($ogImageUrl) . '"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="' . esc_url($ogImageUrl) . '">';
     }
 
 }

@@ -177,6 +177,7 @@ class Mediamask {
 		$plugin_public = new Mediamask_Public( $this->get_mediamask(), $this->get_version() );
 
         $this->loader->add_action( 'wp_head', $plugin_public, 'add_og_image' );
+        $this->loader->add_filter( 'clean_url', $plugin_public, 'double_encoded_nl_to_encoded_nl' );
 
 	}
 
