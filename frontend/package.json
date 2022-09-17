@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "build": "vite build",
     "watch": "vite build --watch --mode development",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@headlessui/vue": "^1.6.7",
