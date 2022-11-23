@@ -16,6 +16,9 @@ jobs:
           npm run build
       - name: Install dependencies
         uses: php-actions/composer@v6
+        with:
+          php_version: "7.3"
+          version: 1
       - name: WordPress Plugin Deploy
         id: deploy
         uses: 10up/action-wordpress-plugin-deploy@stable
