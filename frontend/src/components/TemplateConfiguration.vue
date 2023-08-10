@@ -26,7 +26,9 @@ const templateLink = computed(() => {
 
 onBeforeMount( () => {
   if(data.value.mediamask_template_id === null){
-    data.value.mediamask_template_id = templates.value[0]?.id
+    if(templates.value && templates.value.length > 0){
+      data.value.mediamask_template_id = templates.value[0]?.id
+    }
   }
 })
 

@@ -70,7 +70,7 @@ class Mediamask {
 		if ( defined( 'MEDIAMASK_VERSION' ) ) {
 			$this->version = MEDIAMASK_VERSION;
 		} else {
-			$this->version = '1.0.0';
+			$this->version = '1.0.1';
 		}
 		$this->mediamask = 'mediamask';
 

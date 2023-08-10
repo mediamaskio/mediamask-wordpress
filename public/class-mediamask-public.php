@@ -199,12 +199,18 @@ class Mediamask_Public
             } else if ($configParameter === 'publish_date') {
                 return get_the_date();
             } else if ($configParameter === 'author_name') {
+                if($currentObject instanceof WP_Post){
+                    return get_the_author_meta('display_name', $currentObject->post_author);
+                }
                 return get_the_author();
             } else if ($configParameter === 'permalink') {
                 return get_the_permalink();
             } else if ($configParameter === 'post_thumbnail') {
                 return get_the_post_thumbnail_url(null, 'full');
             } else if ($configParameter === 'author_image') {
+                if($currentObject instanceof WP_Post){
+                    return get_avatar_url($currentObject->post_author);
+                }
                 return get_avatar_url(get_the_author_meta('ID'));
             }
             return $configParameter;
