@@ -111,7 +111,12 @@ class Mediamask_Public
             $this->renderOgImages(reset($matchingDefaultCustomConfigs)['mediamask_template_id'], reset($matchingDefaultCustomConfigs)['dynamic_layers']);
         } else {
             if ($baseConfig = get_option('mediamask_base_configuration')) {
-                $this->renderOgImages($baseConfig['mediamask_template_id'], $baseConfig['dynamic_layers']);
+                if(array_key_exists('only_twitter', $baseConfig) && $baseConfig['only_twitter'] === true){
+                    $this->renderOnlyTwitterOgImage($baseConfig['mediamask_template_id'], $baseConfig['dynamic_layers']);
+                }
+                else {
+                    $this->renderOgImages($baseConfig['mediamask_template_id'], $baseConfig['dynamic_layers']);
+                }
             }
         }
     }
@@ -219,6 +224,15 @@ class Mediamask_Public
 
     private function renderOgImages($templateId, $configParameters)
     {
+        $ogImageUrl = $this->getSignedUrl($templateId, $configParameters);
+
+        // wordpress requires output to be escaped. To allow new lines in the URL, the Character %0A will be replaces before the escaping
+        // it gets reverted back in the clean_url filter
+        $ogImageUrl = str_ireplace('%0A', '%250A', $ogImageUrl);
+        echo '<meta property="og:image" content="' . esc_url_raw($ogImageUrl) . '"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="' . esc_url($ogImageUrl) . '">';
+    }
+
+    private function getSignedUrl($templateId, $configParameters){
         $config = \Mediamask\Configuration::getDefaultConfiguration()->setAccessToken(get_option('mediamask_api_key'));
 
         $apiInstance = new \Mediamask\Api\MediamaskApi(
@@ -226,12 +240,17 @@ class Mediamask_Public
             $config
         );
 
-        $ogImageUrl = $apiInstance->getSignedUrl($templateId, $this->mapConfigParametersToPostValues($configParameters));
+        return $apiInstance->getSignedUrl($templateId, $this->mapConfigParametersToPostValues($configParameters));
+    }
+
+    private function renderOnlyTwitterOgImage($templateId, $configParameters)
+    {
+        $ogImageUrl = $this->getSignedUrl($templateId, $configParameters);
 
         // wordpress requires output to be escaped. To allow new lines in the URL, the Character %0A will be replaces before the escaping
         // it gets reverted back in the clean_url filter
         $ogImageUrl = str_ireplace('%0A', '%250A', $ogImageUrl);
-        echo '<meta property="og:image" content="' . esc_url_raw($ogImageUrl) . '"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="' . esc_url($ogImageUrl) . '">';
+        echo '<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="' . esc_url($ogImageUrl) . '">';
     }
 
 }

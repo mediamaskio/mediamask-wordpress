@@ -13,7 +13,7 @@ const selectedTemplateId = ref();
 
 const template = ref<Template | null>(null);
 
-const baseConfiguration = ref({mediamask_template_id: null, dynamic_layers: {}})
+const baseConfiguration = ref({mediamask_template_id: null, dynamic_layers: {}, only_twitter: false})
 
 const dynamicLayers = computed(() => {
   return templates.value?.find((template) => template.id === baseConfiguration.value?.mediamask_template_id)?.dynamic_layers
@@ -37,6 +37,7 @@ function getBaseConfig() {
       .then(function (response) {
         if(response.data.base_configuration){
           baseConfiguration.value.mediamask_template_id = response.data.base_configuration.mediamask_template_id
+          baseConfiguration.value.only_twitter = response.data.base_configuration.only_twitter
 
           // the server returns an empty array if the config is empty
           if(Array.isArray(response.data.base_configuration.dynamic_layers)){
@@ -97,6 +98,14 @@ function saveBaseConfig() {
                   </div>
                   <span class="text-gray-500 inline-block pt-2">You can create templates at <a
                       class="text-blue-500" href="https://mediamask.io">mediamask.io</a>.</span>
+                  <div class="relative flex items-start mt-4">
+                    <div class="flex h-6 items-center pt-2">
+                      <input v-model="baseConfiguration.only_twitter" id="comments" aria-describedby="comments-description" name="comments" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" />
+                    </div>
+                    <div class="ml-2 text-sm leading-6">
+                      <label for="comments" class="text-gray-700">Only use this template for X/Twitter</label>
+                    </div>
+                  </div>
                 </div>
               </div>
               <hr>

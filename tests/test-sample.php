@@ -83,6 +83,42 @@ class SampleTest extends WP_UnitTestCase
             $output);
     }
 
+
+
+    function testThatBaseConfigOnlyForTwitterWorks()
+    {
+        // Arrange
+        activate_plugin('mediamask');
+        update_option('mediamask_api_key', 'ABC');
+        update_option('mediamask_base_configuration',
+            [
+                "mediamask_template_id" => "ef997dab-a1a9-4743-af5f-566e78c267cc",
+                "dynamic_layers" => [
+                    "title" => "title"
+                ],
+                'only_twitter' => true
+            ]);
+        $my_post = array(
+            'post_title' => 'Awesome Testpage',
+            'post_content' => 'Some fancy content',
+            'post_status' => 'publish',
+        );
+        $postId = wp_insert_post($my_post);
+
+        // Act
+        global $post;
+        $post = get_post($postId);
+        ob_start();
+        wp_head();
+        $output = ob_get_clean();
+
+        // Assert
+        \PHPUnit\Framework\assertStringNotContainsString('<meta property="og:image" content="https://mediamask.io/image/ef997dab-a1a9-4743-af5f-566e78c267cc?title=Awesome%20Testpage&#038;signature=55f9cca5ea086c83d5f5a91feee91d60f38c2d75a0ad3b9f2628f30d379b20ea">',
+            $output);
+        \PHPUnit\Framework\assertStringContainsString('<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://mediamask.io/image/ef997dab-a1a9-4743-af5f-566e78c267cc?title=Awesome%20Testpage&#038;signature=55f9cca5ea086c83d5f5a91feee91d60f38c2d75a0ad3b9f2628f30d379b20ea">',
+            $output);
+    }
+
     function testThatCustomSpecificConfigWorks()
     {
 
